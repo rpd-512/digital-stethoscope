@@ -10,10 +10,6 @@ def read_audio_file(filename):
         audio = np.mean(audio, axis=1)
     return audio, samplerate
 
-# -----------------------
-# SAFER HEART SOUND DSP
-# -----------------------
-
 def preproc_signal(sig):
     # ensure float64 for numerical stability in filtfilt/sosfiltfilt
     sig = np.asarray(sig, dtype=np.float64)
@@ -63,7 +59,6 @@ def envelope(sig, sr, cutoff=7):
     # lowpass
     nyq = 0.5 * sr
     cutoffc = max(min(cutoff / nyq, 0.999999), 1e-6)
-    print(f"Envelope cutoff (normalized): {cutoffc:.6f}")
     sos = butter(2, cutoffc, btype='low', output='sos')
 
     # guard for very short signals
@@ -123,14 +118,6 @@ def plot_results(audio, env, peaks, sr):
     plt.legend()
     plt.show()
 
-def plot_audio(audio, samplerate):
-    t = np.linspace(0, len(audio) / samplerate, num=len(audio))
-    plt.plot(t, audio)
-    plt.xlabel("Time (s)")
-    plt.ylabel("Amplitude")
-    plt.title("Audio Waveform")
-    plt.show()
-
 if __name__ == "__main__":
     try:
         filename = argv[1]
@@ -138,8 +125,6 @@ if __name__ == "__main__":
         print("Usage: python FileBPM.py <audio_filename>")
         exit(1)
     audio, sr = read_audio_file(filename)
-
-    #plot_audio(audio, sr)
 
     bpm, peaks, env = detect_bpm(audio, sr)
     if bpm is None:

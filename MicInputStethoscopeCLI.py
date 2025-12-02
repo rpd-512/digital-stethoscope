@@ -5,16 +5,6 @@ import sounddevice as sd
 import threading
 import time
 
-
-BUFFER_SECONDS = 10
-SAMPLERATE = 44100
-CHANNELS = 1
-
-buffer_size = BUFFER_SECONDS * SAMPLERATE
-audio_buffer = np.zeros(buffer_size, dtype=np.float64)
-write_pos = 0
-lock = threading.Lock()
-
 def audio_callback(indata, frames, time, status):
     global audio_buffer, write_pos
     if status:
@@ -136,6 +126,18 @@ def get_last_audio():
         return np.concatenate((audio_buffer[write_pos:], audio_buffer[:write_pos]))
 
 
+BUFFER_SECONDS = 10
+SAMPLERATE = 44100
+CHANNELS = 1
+
+buffer_size = BUFFER_SECONDS * SAMPLERATE
+audio_buffer = np.zeros(buffer_size, dtype=np.float64)
+write_pos = 0
+lock = threading.Lock()
+
+bpm_history = []
+segment_history = []
+
 stream = sd.InputStream(
     samplerate=SAMPLERATE,
     channels=CHANNELS,
@@ -144,9 +146,6 @@ stream = sd.InputStream(
 )
 stream.start()
 
-bpm_history = []
-
-segment_history = []
 
 while True:
     try:
@@ -170,6 +169,7 @@ if bpm_history:
     plt.ylabel("BPM")
     plt.title("Detected BPM Over Time")
     plt.show()
+    
 #plot last segment with peaks
 if segment_history:
     last_segment = segment_history[-1]
