@@ -1,1 +1,2 @@
-# digital-stethoscope
+# Digital Stethoscope
+
