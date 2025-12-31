@@ -157,7 +157,7 @@ while True:
         else:
             print(f"BPM: {bpm/2:.2f}")
             bpm_history.append(bpm/2)
-        time.sleep(1)
+        time.sleep(2)
     except KeyboardInterrupt:
         print("Exiting...")
         break
@@ -190,6 +190,7 @@ if segment_history:
 
     plt.subplot(2, 1, 2)
     plt.plot(t, env, color='orange', label='Envelope')
+    plt.scatter(t[peaks], env[peaks], color='red', label='Detected Peaks')
     plt.xlabel("Time (s)")
     plt.ylabel("Amplitude")
     plt.title("Envelope of Filtered Signal")
