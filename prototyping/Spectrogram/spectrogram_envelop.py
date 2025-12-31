@@ -1,7 +1,7 @@
 import numpy as np
 import sounddevice as sd
 import matplotlib.pyplot as plt
-from scipy.signal import butter, sosfiltfilt
+from scipy.signal import butter, sosfiltfilt, stft
 from matplotlib.animation import FuncAnimation
 
 # ------------------ parameters ------------------
@@ -41,28 +41,47 @@ fig, (ax_spec, ax_env) = plt.subplots(
 )
 
 # ------------------ update ------------------
+
 def update(frame):
     ax_spec.clear()
     ax_env.clear()
 
+    # -------- bandpass --------
     filt = sosfiltfilt(bp_sos, buffer)
 
     # -------- hard amplitude limit --------
     filt = np.clip(filt, -AMP_LIMIT, AMP_LIMIT)
 
-    ax_spec.specgram(
+    # -------- STFT --------
+    freqs, bins, Zxx = stft(
         filt,
-        NFFT=NFFT,
-        Fs=SR,
+        fs=SR,
+        nperseg=NFFT,
         noverlap=OVERLAP,
-        cmap="inferno",
-        xextent=(-BLOCK_SEC, 0)
+        window="hann",
+        boundary=None,
+        padded=False
     )
+
+    # power spectrogram (same meaning as specgram's Pxx)
+    Pxx = np.abs(Zxx) ** 2
+
+    print("Pxx shape:", Pxx.shape)
+
+    # -------- plot (manual, specgram-style) --------
+    ax_spec.imshow(
+        10 * np.log10(Pxx + 1e-12),
+        origin="lower",
+        aspect="auto",
+        extent=[-BLOCK_SEC, 0, freqs[0], freqs[-1]],
+        cmap="inferno"
+    )
+
     ax_spec.set_ylim(0, 500)
     ax_spec.set_xlim(-BLOCK_SEC, 0)
     ax_spec.set_ylabel("Frequency (Hz)")
     ax_spec.set_title("Live Heart Sound Spectrogram")
-
+    
     rectified = np.abs(filt)
     envelope = sosfiltfilt(env_sos, rectified)
 

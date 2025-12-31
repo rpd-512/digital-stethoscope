@@ -1,86 +1,108 @@
 import os
-import re
+import sys
 import numpy as np
 import soundfile as sf
 import matplotlib.pyplot as plt
-from scipy.signal import butter, sosfiltfilt, stft, resample_poly
-from sys import argv
-from tqdm import tqdm
+from scipy.signal import butter, sosfiltfilt, hilbert, resample_poly, stft
+from math import gcd
+import re
 
-# ===================== parameters =====================
+# ===================== USER PARAMETERS =====================
 
-INPUT_DIR = argv[1]
-OUTPUT_DIR = "DatasetGenerated"
 FNAME_PREFIX = "HB"
 
 SR = 4000
 BLOCK_SEC = 3.0
-BLOCK = int(SR * BLOCK_SEC)
 
 LOW = 30
 HIGH = 500
+
 ENV_CUTOFF = 8
 
 NFFT = 512
 OVERLAP = 448
 
-AMP_LIMIT = 0.1
+AMP_LIMIT = 1
 
-# =====================================================
+OUT_DIR = "DatasetGenerated"
 
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+# ===========================================================
 
-# ---------------- index handling ----------------
-pattern = re.compile(rf"{FNAME_PREFIX}_k(\d+)_spec\.npy")
+BLOCK = int(SR * BLOCK_SEC)
+
+# ------------------ sanity check ------------------
+if len(sys.argv) < 2:
+    print("Usage: python generate_dataset.py <audiofile.wav | directory>")
+    sys.exit(1)
+
+input_path = sys.argv[1]
+os.makedirs(OUT_DIR, exist_ok=True)
+
+# ------------------ collect WAV files ------------------
+if os.path.isdir(input_path):
+    wav_files = sorted(
+        os.path.join(input_path, f)
+        for f in os.listdir(input_path)
+        if f.lower().endswith(".wav")
+    )
+elif os.path.isfile(input_path):
+    wav_files = [input_path]
+else:
+    raise ValueError("Input must be a WAV file or a directory")
+
+if not wav_files:
+    raise ValueError("No WAV files found")
+
+# ------------------ find last used index ------------------
+pattern = re.compile(rf"{FNAME_PREFIX}_spec_(\d+)\.npy")
+
 existing = [
-    int(m.group(1)) for f in os.listdir(OUTPUT_DIR)
-    if (m := pattern.match(f))
+    int(pattern.search(f).group(1))
+    for f in os.listdir(OUT_DIR)
+    if pattern.search(f)
 ]
-k_global = max(existing) + 1 if existing else 0
-print(f"[INFO] Starting from k{k_global:03d}")
 
-# ---------------- filters (SAME AS LIVE) ----------------
+start_index = max(existing) + 1 if existing else 0
+global_index = start_index
+
+print(f"Starting index: {global_index}")
+
+# ------------------ filters ------------------
 bp_sos = butter(4, [LOW, HIGH], btype="band", fs=SR, output="sos")
 env_sos = butter(2, ENV_CUTOFF, btype="low", fs=SR, output="sos")
 
-# ---------------- WAV files ----------------
-wav_files = sorted(f for f in os.listdir(INPUT_DIR) if f.lower().endswith(".wav"))
-if not wav_files:
-    raise RuntimeError("No WAV files found")
+# ================== PROCESS FILES ==================
+for audio_path in wav_files:
 
-# ===================== processing =====================
-for wav in tqdm(wav_files, desc="WAV files"):
-    audio, fs = sf.read(os.path.join(INPUT_DIR, wav))
+    print(f"Processing: {audio_path}")
 
-    if audio.ndim > 1:
-        audio = np.mean(audio, axis=1)
+    sig, file_sr = sf.read(audio_path)
 
-    if fs != SR:
-        audio = resample_poly(audio, SR, fs)
+    if sig.ndim > 1:
+        sig = sig[:, 0]
 
-    num_blocks = len(audio) // BLOCK
+    # -------- resample if needed --------
+    if file_sr != SR:
+        g = gcd(file_sr, SR)
+        sig = resample_poly(sig, SR // g, file_sr // g)
+        print(f"  Resampled {file_sr} Hz → {SR} Hz")
 
-    for _ in tqdm(range(num_blocks), desc="Blocks", leave=False):
-        x = audio[:BLOCK]
-        audio = audio[BLOCK:]
+    num_blocks = len(sig) // BLOCK
+
+    for b in range(1,num_blocks):
+        block = sig[b * BLOCK:(b + 1) * BLOCK]
 
         # -------- bandpass --------
-        x = sosfiltfilt(bp_sos, x)
+        filt = sosfiltfilt(bp_sos, block)
 
-        # -------- HARD CLIP (critical) --------
-        x = np.clip(x, -AMP_LIMIT, AMP_LIMIT)
-
-        if np.max(np.abs(x)) < 0.02 * AMP_LIMIT:
-            continue
-
-        # -------- envelope (RECTIFY + LPF) --------
-        env = np.abs(x)
-        env = sosfiltfilt(env_sos, env)
-        env = np.clip(env, 0, AMP_LIMIT)
+        # -------- envelope --------
+        envelope = np.abs(hilbert(filt))
+        envelope = sosfiltfilt(env_sos, envelope)
+        envelope = np.clip(envelope, 0, AMP_LIMIT)
 
         # -------- STFT --------
-        f, t, Z = stft(
-            x,
+        freqs, bins, Zxx = stft(
+            filt,
             fs=SR,
             nperseg=NFFT,
             noverlap=OVERLAP,
@@ -89,39 +111,54 @@ for wav in tqdm(wav_files, desc="WAV files"):
             padded=False
         )
 
-        P = np.abs(Z) ** 2
-        S = 10 * np.log10(P + 1e-12)
+        Pxx = np.abs(Zxx) ** 2
+        Pxx_db = 10 * np.log10(Pxx + 1e-12)
+        Pxx_norm = (Pxx_db - Pxx_db.min()) / (Pxx_db.max() - Pxx_db.min() + 1e-12)
 
-        # KEEP ONLY 0–500 Hz
-        freq_mask = f <= HIGH
-        f = f[freq_mask]
-        S = S[freq_mask, :]
+        # -------- save tensors --------
+        np.save(
+            os.path.join(OUT_DIR, f"{FNAME_PREFIX}_spec_{global_index:04d}.npy"),
+            Pxx_norm.astype(np.float32)
+        )
 
+        np.save(
+            os.path.join(OUT_DIR, f"{FNAME_PREFIX}_env_{global_index:04d}.npy"),
+            envelope.astype(np.float32)
+        )
 
-        # -------- POWER spectrogram (MATCH specgram) --------
-        P = np.abs(Z) ** 2
-        S = 10 * np.log10(P + 1e-12)
-
-        # -------- save ML --------
-        np.save(f"{OUTPUT_DIR}/{FNAME_PREFIX}_k{k_global:03d}_spec.npy", S.astype(np.float32))
-        np.save(f"{OUTPUT_DIR}/{FNAME_PREFIX}_k{k_global:03d}_env.npy", env.astype(np.float32))
-
-        # -------- visualization --------
-        plt.figure(figsize=(6, 4))
-        plt.imshow(
-            S,
+        # -------- save spectrogram image --------
+        fig, ax = plt.subplots(figsize=(6, 4))
+        print(Pxx_norm.shape)
+        ax.imshow(
+            Pxx_norm,
             origin="lower",
             aspect="auto",
-            extent=[t[0], t[-1], f[0], f[-1]],
+            extent=[0, BLOCK_SEC, freqs[0], freqs[-1]],
             cmap="inferno"
         )
-        plt.xlabel("Time (s)")
-        plt.ylabel("Frequency (Hz)")
-        plt.colorbar(label="Power (dB)")
-        plt.tight_layout()
-        plt.savefig(f"{OUTPUT_DIR}/{FNAME_PREFIX}_k{k_global:03d}_spec.png", dpi=150)
-        plt.close()
+        ax.set_ylim(0, 200)
+        ax.axis("off")
+        fig.savefig(
+            os.path.join(OUT_DIR, f"{FNAME_PREFIX}_spec_{global_index:04d}.png"),
+            dpi=200,
+            bbox_inches="tight",
+            pad_inches=0
+        )
+        plt.close(fig)
 
-        k_global += 1
+        # -------- save envelope image --------
+        t = np.linspace(0, BLOCK_SEC, len(envelope))
+        fig, ax = plt.subplots(figsize=(6, 2))
+        ax.plot(t, envelope, color="black", linewidth=1)
+        ax.set_ylim(0, AMP_LIMIT)
+        fig.savefig(
+            os.path.join(OUT_DIR, f"{FNAME_PREFIX}_env_{global_index:04d}.png"),
+            dpi=200,
+            bbox_inches="tight",
+            pad_inches=0
+        )
+        plt.close(fig)
 
-print(f"[DONE] Dataset contains samples up to k{k_global-1:03d}")
+        global_index += 1
+
+print(f"Done. Generated {global_index - start_index} new blocks.")
