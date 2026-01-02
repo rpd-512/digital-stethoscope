@@ -8,7 +8,7 @@ from statistics import median
 from collections import deque
 
 CONF_HISTORY = 10        # number of recent windows
-CONF_THRESH  = 0.60     # per-window confidence
+CONF_THRESH  = 0.55     # per-window confidence
 MEAN_THRESH  = 0.60     # mean confidence threshold
 
 conf_buffer = deque(maxlen=CONF_HISTORY)
@@ -43,7 +43,6 @@ BLOCK_SEC = 3.0
 
 LOW = 30
 HIGH = 500
-
 ENV_CUTOFF = 8        # envelope smoothing cutoff (Hz)
 
 NFFT = 512
