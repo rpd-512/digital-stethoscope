@@ -6,7 +6,7 @@ from matplotlib.animation import FuncAnimation
 
 # ------------------ parameters ------------------
 SR = 4000
-BLOCK_SEC = 3.0
+BLOCK_SEC = 2.0
 
 LOW = 30
 HIGH = 500
@@ -16,7 +16,7 @@ ENV_CUTOFF = 8        # envelope smoothing cutoff (Hz)
 NFFT = 512
 OVERLAP = 448
 
-AMP_LIMIT = 0.1
+AMP_LIMIT = 1
 
 BLOCK = int(SR * BLOCK_SEC)
 
@@ -50,7 +50,7 @@ def update(frame):
     filt = sosfiltfilt(bp_sos, buffer)
 
     # -------- hard amplitude limit --------
-    filt = np.clip(filt, -AMP_LIMIT, AMP_LIMIT)
+    #filt = np.clip(filt, -AMP_LIMIT, AMP_LIMIT)
 
     # -------- STFT --------
     freqs, bins, Zxx = stft(
@@ -66,7 +66,6 @@ def update(frame):
     # power spectrogram (same meaning as specgram's Pxx)
     Pxx = np.abs(Zxx) ** 2
 
-    print("Pxx shape:", Pxx.shape)
 
     # -------- plot (manual, specgram-style) --------
     ax_spec.imshow(

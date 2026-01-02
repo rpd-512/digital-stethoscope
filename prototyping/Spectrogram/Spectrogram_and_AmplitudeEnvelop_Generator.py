@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from scipy.signal import butter, sosfiltfilt, hilbert, resample_poly, stft
 from math import gcd
 import re
+from tqdm import tqdm
 
 # ===================== USER PARAMETERS =====================
 
@@ -24,7 +25,7 @@ OVERLAP = 448
 
 AMP_LIMIT = 1
 
-OUT_DIR = "DatasetGenerated"
+OUT_DIR = "DatasetGenerated/NewData/Heartbeat"
 
 # ===========================================================
 
@@ -72,7 +73,7 @@ bp_sos = butter(4, [LOW, HIGH], btype="band", fs=SR, output="sos")
 env_sos = butter(2, ENV_CUTOFF, btype="low", fs=SR, output="sos")
 
 # ================== PROCESS FILES ==================
-for audio_path in wav_files:
+for audio_path in tqdm(wav_files, desc="Processing files"):
 
     print(f"Processing: {audio_path}")
 
@@ -89,7 +90,7 @@ for audio_path in wav_files:
 
     num_blocks = len(sig) // BLOCK
 
-    for b in range(1,num_blocks):
+    for b in tqdm(range(1,num_blocks), desc="Processing blocks"):
         block = sig[b * BLOCK:(b + 1) * BLOCK]
 
         # -------- bandpass --------
@@ -128,7 +129,6 @@ for audio_path in wav_files:
 
         # -------- save spectrogram image --------
         fig, ax = plt.subplots(figsize=(6, 4))
-        print(Pxx_norm.shape)
         ax.imshow(
             Pxx_norm,
             origin="lower",
