@@ -18,6 +18,7 @@ bpm_buffer = deque(maxlen=BPM_HISTORY)
 
 HB_HISTORY = []
 
+
 def weighted_bce(pos_weight=1.0, neg_weight=1.23):
     def loss(y_true, y_pred):
         y_true = tf.cast(y_true, tf.float32)
@@ -52,6 +53,9 @@ AMP_LIMIT = 1.5
 
 BLOCK = int(SR * BLOCK_SEC)
 
+BPM_DISPLAY_POINTS = 60   # ~last 6 seconds if update ≈10 Hz
+bpm_time_buffer = deque(maxlen=BPM_DISPLAY_POINTS)
+
 # ------------------ filters ------------------
 bp_sos = butter(4, [LOW, HIGH], btype='band', fs=SR, output='sos')
 env_sos = butter(2, ENV_CUTOFF, btype='low', fs=SR, output='sos')
@@ -66,11 +70,15 @@ def audio_callback(indata, frames, time, status):
     buffer[-len(sig):] = sig
 
 # ------------------ plot ------------------
-fig, (ax_spec, ax_env) = plt.subplots(
-    2, 1, figsize=(10, 6),
-    gridspec_kw={"height_ratios": [3, 1]},
-    sharex=True
+fig, (ax_spec, ax_env, ax_bpm) = plt.subplots(
+    3, 1,
+    figsize=(12, 9),
+    sharex=True,
+    gridspec_kw={"height_ratios": [3, 1, 0.8]},
+    constrained_layout=True
 )
+
+
 
 # ------------------ update ------------------
 def detect_bpm(envelope, sr):
@@ -121,7 +129,7 @@ def detect_bpm(envelope, sr):
 def update(frame):
     ax_spec.clear()
     ax_env.clear()
-
+    
     # -------- bandpass --------
     filt = sosfiltfilt(bp_sos, buffer)
 
@@ -207,6 +215,30 @@ def update(frame):
         print("No heartbeat detected.")
         ax_env.set_title("Amplitude Envelope - No Heartbeat", color="red")
 
+    if heartbeat and bpm > 0:
+        bpm_time_buffer.append(bpm)
+    else:
+        if len(bpm_time_buffer) > 0:
+            bpm_time_buffer.append(bpm_time_buffer[-1])
+
+
+    ax_bpm.clear()
+
+    t_bpm = np.linspace(
+        -len(bpm_time_buffer) * 0.1,  # 0.1 s per frame (interval=100 ms)
+        0,
+        len(bpm_time_buffer)
+    )
+
+    ax_bpm.plot(t_bpm, bpm_time_buffer, color="orange", linewidth=2)
+
+    ax_bpm.set_ylim(50, 200)
+    ax_bpm.set_ylabel("BPM")
+    ax_bpm.set_xlabel("Time (s)")
+    ax_bpm.set_title("Live BPM Tracking")
+    ax_bpm.grid(alpha=0.3)
+
+
     #plot the peaks if heartbeat and bpm > 0:
     if heartbeat and bpm > 0:
         peak_times_s1 = np.array(s1) / SR - BLOCK_SEC
@@ -227,7 +259,6 @@ stream = sd.InputStream(
 
 with stream:
     ani = FuncAnimation(fig, update, interval=100)
-    plt.tight_layout()
     plt.show()
 
 
