@@ -198,10 +198,12 @@ def update(_):
         cmap="inferno"
     )
     ax_spec.set_ylim(0, 500)
+    ax_spec.set_xlim(-BLOCK_SEC, 0)
     ax_spec.set_title("Live Heart Sound Spectrogram")
 
     t = np.linspace(-BLOCK_SEC, 0, BLOCK)
     ax_env.plot(t, envelope, color="cyan", lw=1.5)
+    ax_env.set_xlim(-BLOCK_SEC, 0)
     ax_env.set_ylim(0, AMP_LIMIT)
 
     if heartbeat:
