@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CardioScope — Digital Stethoscope</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Exo+2:wght@100;200;300;400&display=swap" rel="stylesheet">
+<style>
+/* ─── DESIGN TOKENS ─────────────────────────────────────── */
+:root {
+  --bg:         #040b14;
+  --bg2:        #071220;
+  --bg3:        #0a1a2e;
+  --panel:      #0c1f38;
+  --panel2:     #0e2444;
+  --border:     #1a3a5c;
+  --border2:    #1e4870;
+  --accent:     #00d4ff;
+  --accent2:    #0096cc;
+  --green:      #00ff88;
+  --green2:     #00cc6a;
+  --red:        #ff3366;
+  --orange:     #ff8c00;
+  --yellow:     #ffd700;
+  --s1:         #ff4444;
+  --s2:         #4488ff;
+  --text:       #c8dff0;
+  --text2:      #7aaabf;
+  --text3:      #3d6a88;
+  --glow:       0 0 20px rgba(0,212,255,0.3);
+  --glow2:      0 0 40px rgba(0,212,255,0.15);
+  --font-mono:  'Share Tech Mono', monospace;
+  --font-ui:    'Rajdhani', sans-serif;
+  --font-thin:  'Exo 2', sans-serif;
+}
+
+/* ─── RESET ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font-ui); }
+
+/* ─── SCANLINE OVERLAY ──────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+  pointer-events: none; z-index: 9999;
+}
+
+/* ─── INSTALLATION SCREEN ───────────────────────────────── */
+#install-screen {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 1000;
+  transition: opacity 0.8s ease;
+}
+#install-screen.hidden { opacity: 0; pointer-events: none; }
+
+.install-logo {
+  font-family: var(--font-thin);
+  font-size: 13px; font-weight: 200; letter-spacing: 8px;
+  color: var(--accent); text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.install-title {
+  font-family: var(--font-ui);
+  font-size: 52px; font-weight: 700; letter-spacing: 3px;
+  color: #fff;
+  text-shadow: 0 0 60px rgba(0,212,255,0.5);
+  margin-bottom: 4px;
+}
+.install-sub {
+  font-family: var(--font-mono);
+  font-size: 11px; color: var(--text3); letter-spacing: 4px;
+  margin-bottom: 48px;
+}
+
+.install-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  width: 560px;
+  padding: 28px 32px;
+  box-shadow: var(--glow2);
+}
+.install-card-title {
+  font-size: 11px; letter-spacing: 4px; color: var(--text3);
+  text-transform: uppercase; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 10px;
+}
+.install-card-title::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+.dep-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; border-bottom: 1px solid rgba(26,58,92,0.4);
+  font-size: 15px; font-weight: 500;
+}
+.dep-row:last-child { border-bottom: none; }
+.dep-name { color: var(--text); }
+.dep-badge {
+  font-family: var(--font-mono);
+  font-size: 11px; padding: 3px 10px; border-radius: 2px;
+  letter-spacing: 1px;
+}
+.dep-ok    { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.3); }
+.dep-miss  { background: rgba(255,51,102,0.1); color: var(--red);   border: 1px solid rgba(255,51,102,0.3); }
+.dep-opt   { background: rgba(255,140,0,0.1);  color: var(--orange); border: 1px solid rgba(255,140,0,0.3); }
+
+.install-progress {
+  margin-top: 24px;
+  height: 3px; background: var(--bg3); border-radius: 2px; overflow: hidden;
+}
+.install-bar {
+  height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent));
+  width: 0%; transition: width 0.4s ease;
+  box-shadow: 0 0 10px var(--accent);
+}
+
+.install-status {
+  font-family: var(--font-mono);
+  font-size: 11px; color: var(--text3); margin-top: 12px; letter-spacing: 1px;
+}
+
+.install-btn {
+  margin-top: 24px; width: 100%; padding: 14px;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent); font-family: var(--font-ui);
+  font-size: 14px; font-weight: 600; letter-spacing: 3px;
+  text-transform: uppercase; cursor: pointer;
+  transition: all 0.2s; border-radius: 2px;
+}
+.install-btn:hover {
+  background: rgba(0,212,255,0.08);
+  box-shadow: var(--glow);
+}
+.install-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ─── MAIN LAYOUT ───────────────────────────────────────── */
+#main {
+  width: 100vw; height: 100vh;
+  display: grid;
+  grid-template-rows: 56px 1fr 120px 96px 36px;
+  grid-template-columns: 200px 1fr 200px;
+  gap: 0;
+  opacity: 0; transition: opacity 0.6s ease;
+}
+#main.visible { opacity: 1; }
+
+/* ─── TOPBAR ────────────────────────────────────────────── */
+#topbar {
+  grid-column: 1/-1; grid-row: 1;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 20px;
+  gap: 20px;
+}
+.logo-mark {
+  width: 32px; height: 32px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.logo-mark::before {
+  content: ''; width: 12px; height: 12px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  animation: pulse-ring 2s ease-in-out infinite;
+}
+@keyframes pulse-ring {
+  0%,100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.4); opacity: 0.4; }
+}
+.logo-text { font-size: 20px; font-weight: 700; letter-spacing: 2px; color: #fff; }
+.logo-text span { color: var(--accent); }
+
+.topbar-sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+
+.sys-time {
+  font-family: var(--font-mono); font-size: 13px; color: var(--text2); margin-left: auto;
+}
+
+#status-badge {
+  padding: 5px 14px; border-radius: 2px; font-size: 12px; letter-spacing: 2px;
+  font-weight: 600; transition: all 0.3s;
+}
+.status-idle    { background: rgba(60,80,100,0.4); color: var(--text3); border: 1px solid var(--border); }
+.status-active  { background: rgba(0,255,136,0.08); color: var(--green); border: 1px solid rgba(0,255,136,0.3); }
+.status-beat    { background: rgba(0,255,136,0.15); color: var(--green); border: 1px solid var(--green); box-shadow: 0 0 12px rgba(0,255,136,0.2); animation: beat-flash 0.4s ease; }
+.status-no-beat { background: rgba(255,51,102,0.08); color: var(--red);   border: 1px solid rgba(255,51,102,0.3); }
+@keyframes beat-flash {
+  0%,100% { box-shadow: 0 0 12px rgba(0,255,136,0.2); }
+  50%      { box-shadow: 0 0 30px rgba(0,255,136,0.6); }
+}
+
+.top-btn {
+  padding: 7px 16px; border-radius: 2px; cursor: pointer;
+  font-family: var(--font-ui); font-size: 12px; font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase; transition: all 0.2s;
+  border: 1px solid;
+}
+.btn-start { border-color: var(--green2); color: var(--green); background: rgba(0,255,136,0.05); }
+.btn-start:hover { background: rgba(0,255,136,0.12); box-shadow: 0 0 14px rgba(0,255,136,0.2); }
+.btn-stop  { border-color: rgba(255,51,102,0.5); color: var(--red); background: rgba(255,51,102,0.05); }
+.btn-stop:hover { background: rgba(255,51,102,0.12); }
+.btn-settings { border-color: var(--border2); color: var(--text2); background: transparent; }
+.btn-settings:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ─── LEFT PANEL ────────────────────────────────────────── */
+#left-panel {
+  grid-column: 1; grid-row: 2/5;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 16px;
+  overflow-y: auto;
+}
+
+.panel-label {
+  font-size: 9px; letter-spacing: 3px; color: var(--text3);
+  text-transform: uppercase; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.panel-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* BPM Gauge */
+.bpm-display {
+  text-align: center; padding: 12px 0;
+}
+.bpm-value {
+  font-family: var(--font-mono); font-size: 56px; font-weight: 400;
+  line-height: 1; color: var(--accent);
+  text-shadow: 0 0 30px rgba(0,212,255,0.5);
+  transition: all 0.3s;
+}
+.bpm-unit { font-size: 12px; color: var(--text3); letter-spacing: 3px; margin-top: 2px; }
+
+.bpm-zone {
+  margin-top: 8px; padding: 4px 10px; border-radius: 2px;
+  font-size: 11px; letter-spacing: 2px; font-weight: 600;
+  display: inline-block;
+}
+.zone-normal  { background: rgba(0,255,136,0.1); color: var(--green); }
+.zone-low     { background: rgba(0,150,255,0.1); color: #4488ff; }
+.zone-high    { background: rgba(255,140,0,0.1);  color: var(--orange); }
+.zone-danger  { background: rgba(255,51,102,0.1); color: var(--red); }
+
+/* Confidence bar */
+.conf-bar-wrap { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+.conf-bar { height: 100%; border-radius: 3px; transition: width 0.2s; background: linear-gradient(90deg, var(--accent2), var(--accent)); }
+
+/* Metric rows */
+.metric-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 0; border-bottom: 1px solid rgba(26,58,92,0.4);
+  font-size: 13px;
+}
+.metric-row:last-child { border: none; }
+.metric-key { color: var(--text3); font-size: 11px; letter-spacing: 1px; }
+.metric-val { font-family: var(--font-mono); font-size: 14px; color: var(--text); }
+.metric-val.ok  { color: var(--green); }
+.metric-val.warn { color: var(--orange); }
+.metric-val.err  { color: var(--red); }
+
+/* S1/S2 legend */
+.legend-row { display: flex; gap: 16px; margin-top: 6px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+/* ─── RIGHT PANEL ───────────────────────────────────────── */
+#right-panel {
+  grid-column: 3; grid-row: 2/5;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 16px;
+  overflow-y: auto;
+}
+
+.history-mini {
+  height: 80px; position: relative;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 2px;
+  overflow: hidden;
+}
+.history-mini canvas { width: 100%; height: 100%; }
+
+/* ─── SPECTROGRAM ───────────────────────────────────────── */
+#spec-section {
+  grid-column: 2; grid-row: 2;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px 8px;
+  position: relative; overflow: hidden;
+}
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 6px;
+}
+.section-title {
+  font-size: 9px; letter-spacing: 3px; color: var(--text3); text-transform: uppercase;
+}
+.section-meta {
+  font-family: var(--font-mono); font-size: 10px; color: var(--text3);
+}
+
+#spec-canvas {
+  width: 100%; height: calc(100% - 28px);
+  image-rendering: pixelated;
+}
+
+/* Frequency axis ticks */
+.freq-axis {
+  position: absolute; right: 4px; top: 28px; bottom: 4px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  pointer-events: none;
+}
+.freq-tick { font-family: var(--font-mono); font-size: 9px; color: var(--text3); }
+
+/* ─── ENVELOPE ──────────────────────────────────────────── */
+#env-section {
+  grid-column: 2; grid-row: 3;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px 8px;
+  position: relative; overflow: hidden;
+}
+#env-canvas { width: 100%; height: calc(100% - 28px); }
+
+/* ─── BPM TREND ─────────────────────────────────────────── */
+#bpm-section {
+  grid-column: 2; grid-row: 4;
+  background: var(--bg2);
+  padding: 8px 16px 6px;
+  position: relative; overflow: hidden;
+}
+#bpm-canvas { width: 100%; height: calc(100% - 24px); }
+
+/* ─── STATUSBAR ─────────────────────────────────────────── */
+#statusbar {
+  grid-column: 1/-1; grid-row: 5;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 16px; gap: 20px;
+  font-family: var(--font-mono); font-size: 10px; color: var(--text3);
+}
+.sb-item { display: flex; gap: 6px; }
+.sb-label { color: var(--text3); }
+.sb-val   { color: var(--text2); }
+.sb-dot   { width: 6px; height: 6px; border-radius: 50%; align-self: center; }
+.sb-green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.sb-red   { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+.sb-gray  { background: var(--text3); }
+
+/* ─── SETTINGS MODAL ────────────────────────────────────── */
+#settings-overlay {
+  position: fixed; inset: 0;
+  background: rgba(4,11,20,0.85);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 500; opacity: 0; pointer-events: none;
+  transition: opacity 0.2s;
+}
+#settings-overlay.open { opacity: 1; pointer-events: all; }
+
+.settings-modal {
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  width: 480px;
+  box-shadow: 0 0 60px rgba(0,150,255,0.15);
+  animation: modal-in 0.2s ease;
+}
+@keyframes modal-in { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-title { font-size: 16px; font-weight: 600; letter-spacing: 2px; color: #fff; }
+.modal-close {
+  width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 2px;
+  background: transparent; color: var(--text2); cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.modal-close:hover { border-color: var(--red); color: var(--red); }
+
+.modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; }
+
+.setting-group { display: flex; flex-direction: column; gap: 8px; }
+.setting-label {
+  font-size: 11px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase;
+  display: flex; justify-content: space-between;
+}
+.setting-label span { font-family: var(--font-mono); color: var(--accent); }
+
+input[type="range"] {
+  width: 100%; -webkit-appearance: none; appearance: none;
+  height: 4px; border-radius: 2px; outline: none;
+  background: var(--bg3);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--accent); cursor: pointer; border: 2px solid var(--bg);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.setting-desc { font-size: 11px; color: var(--text3); }
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 10px; justify-content: flex-end;
+}
+.btn-apply {
+  padding: 9px 24px; border: 1px solid var(--accent); border-radius: 2px;
+  background: rgba(0,212,255,0.08); color: var(--accent);
+  font-family: var(--font-ui); font-size: 13px; font-weight: 600;
+  letter-spacing: 2px; cursor: pointer; transition: all 0.2s;
+}
+.btn-apply:hover { background: rgba(0,212,255,0.15); box-shadow: var(--glow); }
+.btn-cancel {
+  padding: 9px 20px; border: 1px solid var(--border); border-radius: 2px;
+  background: transparent; color: var(--text2);
+  font-family: var(--font-ui); font-size: 13px; letter-spacing: 1px;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-cancel:hover { border-color: var(--text2); color: var(--text); }
+
+/* ─── HEARTBEAT ANIMATION ───────────────────────────────── */
+.hb-flash {
+  position: fixed; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(0,255,136,0.04) 0%, transparent 70%);
+  opacity: 0; z-index: 100;
+}
+.hb-flash.animate { animation: hb-anim 0.5s ease-out; }
+@keyframes hb-anim {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ─── ECG LINE DECORATION ───────────────────────────────── */
+.ecg-deco {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 2px; overflow: hidden; opacity: 0.4;
+}
+.ecg-deco::after {
+  content: '';
+  position: absolute; bottom: 0; left: -200%;
+  width: 400%; height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%, transparent 20%,
+    var(--accent) 25%, var(--accent) 26%,
+    transparent 27%, transparent 30%,
+    var(--green) 32%, var(--green) 35%, var(--green) 38%,
+    transparent 40%, transparent 100%
+  );
+  animation: ecg-run 4s linear infinite;
+}
+@keyframes ecg-run { to { transform: translateX(50%); } }
+</style>
+</head>
+<body>
+
+<!-- ─── HEARTBEAT FLASH ─────────────────────────── -->
+<div class="hb-flash" id="hb-flash"></div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!--  INSTALLATION SCREEN                          -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="install-screen">
+  <div class="install-logo">Cardio Diagnostics Systems</div>
+  <div class="install-title">CardioScope</div>
+  <div class="install-sub">DIGITAL AUSCULTATION PLATFORM · v2.0</div>
+
+  <div class="install-card">
+    <div class="install-card-title">System Check</div>
+
+    <div id="dep-list">
+      <!-- Populated by JS -->
+    </div>
+
+    <div class="install-progress"><div class="install-bar" id="install-bar"></div></div>
+    <div class="install-status" id="install-status">Checking dependencies…</div>
+
+    <button class="install-btn" id="launch-btn" disabled>LAUNCH APPLICATION</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!--  MAIN APP                                      -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="main">
+
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <div class="logo-mark"></div>
+    <div class="logo-text">Cardio<span>Scope</span></div>
+    <div class="topbar-sep"></div>
+    <span style="font-size:11px;letter-spacing:3px;color:var(--text3)">DIGITAL STETHOSCOPE</span>
+
+    <div class="topbar-sep"></div>
+    <div id="status-badge" class="status-idle">STANDBY</div>
+
+    <button class="top-btn btn-start" id="btn-start">▶ START</button>
+    <button class="top-btn btn-stop"  id="btn-stop" style="display:none">■ STOP</button>
+    <button class="top-btn btn-settings" id="btn-settings">⚙ SETTINGS</button>
+
+    <div class="sys-time" id="sys-time">--:--:--</div>
+  </div>
+
+  <!-- LEFT PANEL -->
+  <div id="left-panel">
+    <div>
+      <div class="panel-label">Heart Rate</div>
+      <div class="bpm-display">
+        <div class="bpm-value" id="bpm-big">---</div>
+        <div class="bpm-unit">BPM</div>
+        <div class="bpm-zone zone-normal" id="bpm-zone">NORMAL RANGE</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-label">Confidence</div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:4px;">
+        <span>Detection Probability</span>
+        <span id="conf-pct" style="font-family:var(--font-mono);color:var(--text2)">0%</span>
+      </div>
+      <div class="conf-bar-wrap"><div class="conf-bar" id="conf-bar" style="width:0%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:4px;">
+        <span>Mean</span>
+        <span id="mean-conf" style="font-family:var(--font-mono)">0.00</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-label">Diagnostics</div>
+      <div class="metric-row">
+        <span class="metric-key">STATUS</span>
+        <span class="metric-val" id="diag-status">OFFLINE</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key">DETECTIONS</span>
+        <span class="metric-val" id="diag-count">0</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key">MODEL</span>
+        <span class="metric-val {{ 'ok' if model_loaded else 'warn' }}" id="diag-model">
+          {{ 'LOADED' if model_loaded else 'NOT FOUND' }}
+        </span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key">AUDIO</span>
+        <span class="metric-val {{ 'ok' if deps.sounddevice else 'err' }}">
+          {{ 'READY' if deps.sounddevice else 'ERROR' }}
+        </span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key">SAMPLE RATE</span>
+        <span class="metric-val">4000 Hz</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-label">Sound Components</div>
+      <div class="legend-row">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--s1)"></div>
+          <span>S1 (Lub)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--s2)"></div>
+          <span>S2 (Dub)</span>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:8px;line-height:1.6">
+        S1 — Mitral & tricuspid valve closure.<br>
+        S2 — Aortic & pulmonic valve closure.
+      </div>
+    </div>
+  </div>
+
+  <!-- SPECTROGRAM -->
+  <div id="spec-section">
+    <div class="section-header">
+      <div class="section-title">Frequency Spectrogram</div>
+      <div class="section-meta" id="spec-meta">NFFT: 512 · OVERLAP: 448 · WINDOW: HANN</div>
+    </div>
+    <canvas id="spec-canvas"></canvas>
+    <div class="freq-axis" id="freq-axis"></div>
+    <div class="ecg-deco"></div>
+  </div>
+
+  <!-- ENVELOPE -->
+  <div id="env-section">
+    <div class="section-header">
+      <div class="section-title">Signal Envelope</div>
+      <div class="section-meta" id="env-meta">HILBERT TRANSFORM · BANDPASS FILTERED</div>
+    </div>
+    <canvas id="env-canvas"></canvas>
+  </div>
+
+  <!-- BPM TREND -->
+  <div id="bpm-section">
+    <div class="section-header">
+      <div class="section-title">Live BPM Trend</div>
+      <div class="section-meta" id="bpm-meta">60-POINT ROLLING WINDOW</div>
+    </div>
+    <canvas id="bpm-canvas"></canvas>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="right-panel">
+    <div>
+      <div class="panel-label">BPM History</div>
+      <div class="history-mini"><canvas id="hist-canvas"></canvas></div>
+    </div>
+
+    <div>
+      <div class="panel-label">Filter Config</div>
+      <div class="metric-row">
+        <span class="metric-key">LOW CUTOFF</span>
+        <span class="metric-val" id="cfg-low">30 Hz</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key">HIGH CUTOFF</span>
+        <span class="metric-val" id="cfg-high">500 Hz</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key">AMP LIMIT</span>
+        <span class="metric-val" id="cfg-amp">1.5</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key">ENV CUTOFF</span>
+        <span class="metric-val">8 Hz</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-label">Session Stats</div>
+      <div class="metric-row">
+        <span class="metric-key">SESSION BPM MIN</span>
+        <span class="metric-val" id="stat-min">---</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key">SESSION BPM MAX</span>
+        <span class="metric-val" id="stat-max">---</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key">SESSION BPM AVG</span>
+        <span class="metric-val" id="stat-avg">---</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-label">Clinical Ranges</div>
+      <div class="metric-row">
+        <span class="metric-key" style="color:#4488ff">BRADYCARDIA</span>
+        <span class="metric-val" style="color:#4488ff">< 60</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key" style="color:var(--green)">NORMAL</span>
+        <span class="metric-val" style="color:var(--green)">60–100</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key" style="color:var(--orange)">TACHYCARDIA</span>
+        <span class="metric-val" style="color:var(--orange)">101–149</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key" style="color:var(--red)">CRITICAL</span>
+        <span class="metric-val" style="color:var(--red)">≥ 150</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATUSBAR -->
+  <div id="statusbar">
+    <div class="sb-item">
+      <div class="sb-dot" id="sb-dot" style="background:var(--text3)"></div>
+      <span class="sb-val" id="sb-text">SYSTEM READY</span>
+    </div>
+    <div class="sb-item"><span class="sb-label">SR:</span><span class="sb-val">4000 Hz</span></div>
+    <div class="sb-item"><span class="sb-label">BLOCK:</span><span class="sb-val">3.0 s</span></div>
+    <div class="sb-item"><span class="sb-label">FILTER:</span><span class="sb-val" id="sb-filter">30–500 Hz</span></div>
+    <div class="sb-item" style="margin-left:auto">
+      <span class="sb-label">CardioScope</span>
+      <span class="sb-val">v2.0</span>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div id="settings-overlay">
+  <div class="settings-modal">
+    <div class="modal-header">
+      <div class="modal-title">⚙ SIGNAL PARAMETERS</div>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="setting-group">
+        <div class="setting-label">
+          Bandpass — Upper Cutoff Frequency
+          <span id="lbl-high">500 Hz</span>
+        </div>
+        <input type="range" id="sl-high" min="100" max="1000" step="10" value="500">
+        <div class="setting-desc">Controls the upper frequency limit of the bandpass filter. Heart sounds are typically 20–500 Hz. Increase to capture higher harmonics.</div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-label">
+          Bandpass — Lower Cutoff Frequency
+          <span id="lbl-low">30 Hz</span>
+        </div>
+        <input type="range" id="sl-low" min="10" max="100" step="5" value="30">
+        <div class="setting-desc">Lower bound of bandpass filter. Reducing this can capture very low frequency components but may increase baseline noise.</div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-label">
+          Amplitude Limit (AMP_LIMIT)
+          <span id="lbl-amp">1.5</span>
+        </div>
+        <input type="range" id="sl-amp" min="0.1" max="5.0" step="0.1" value="1.5">
+        <div class="setting-desc">Clips envelope amplitude to reduce motion artifact and noise spikes. Reduce for quieter signals; increase for stronger cardiac sounds.</div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" id="btn-cancel">Cancel</button>
+      <button class="btn-apply" id="btn-apply">Apply Settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<script>
+// ── DEPS from server ──────────────────────────────────────
+const DEPS = {{ deps | tojson }};
+const MODEL_LOADED = {{ 'true' if model_loaded else 'false' }};
+
+// ── INSTALL SCREEN ────────────────────────────────────────
+(function setupInstall() {
+  const seen = localStorage.getItem('cardio_installed_v2');
+  const depList = document.getElementById('dep-list');
+  const bar     = document.getElementById('install-bar');
+  const status  = document.getElementById('install-status');
+  const btn     = document.getElementById('launch-btn');
+  const screen  = document.getElementById('install-screen');
+  const mainEl  = document.getElementById('main');
+
+  const depInfo = {
+    numpy:       { label: 'NumPy',        required: true,  note: 'Array processing' },
+    scipy:       { label: 'SciPy',        required: true,  note: 'Signal filtering & STFT' },
+    flask:       { label: 'Flask',        required: true,  note: 'Web server' },
+    sounddevice: { label: 'SoundDevice',  required: true,  note: 'Audio capture' },
+    torch:       { label: 'PyTorch',      required: false, note: 'Neural network inference (optional)' },
+  };
+
+  let html = '';
+  let ok = 0, total = Object.keys(depInfo).length;
+  for (const [key, info] of Object.entries(depInfo)) {
+    const present = DEPS[key];
+    const badgeClass = present ? 'dep-ok' : (info.required ? 'dep-miss' : 'dep-opt');
+    const badgeText  = present ? 'READY'  : (info.required ? 'MISSING' : 'OPTIONAL');
+    if (present) ok++;
+    html += `<div class="dep-row">
+      <div>
+        <div class="dep-name">${info.label}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:1px">${info.note}</div>
+      </div>
+      <div class="dep-badge ${badgeClass}">${badgeText}</div>
+    </div>`;
+  }
+  depList.innerHTML = html;
+
+  // Animate bar
+  let pct = 0;
+  const tick = setInterval(() => {
+    pct = Math.min(pct + 3, (ok / total) * 100);
+    bar.style.width = pct + '%';
+    if (pct >= (ok / total) * 100) {
+      clearInterval(tick);
+      const required_ok = DEPS.numpy && DEPS.scipy && DEPS.flask && DEPS.sounddevice;
+      if (required_ok) {
+        status.textContent = 'All required dependencies found. System ready.';
+        status.style.color = 'var(--green)';
+      } else {
+        status.innerHTML = 'Missing dependencies detected. Run: <code style="color:var(--accent)">pip install numpy scipy flask sounddevice torch</code>';
+        status.style.color = 'var(--orange)';
+      }
+      btn.disabled = false;
+    }
+  }, 30);
+
+  // Skip install on subsequent runs
+  if (seen) {
+    screen.style.display = 'none';
+    mainEl.classList.add('visible');
+    return;
+  }
+
+  btn.addEventListener('click', () => {
+    localStorage.setItem('cardio_installed_v2', '1');
+    screen.classList.add('hidden');
+    setTimeout(() => {
+      screen.style.display = 'none';
+      mainEl.classList.add('visible');
+    }, 800);
+  });
+})();
+
+// ── CLOCK ─────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('sys-time').textContent =
+    now.toTimeString().slice(0,8);
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── CANVAS SETUP ──────────────────────────────────────────
+const specCvs  = document.getElementById('spec-canvas');
+const envCvs   = document.getElementById('env-canvas');
+const bpmCvs   = document.getElementById('bpm-canvas');
+const histCvs  = document.getElementById('hist-canvas');
+const specCtx  = specCvs.getContext('2d');
+const envCtx   = envCvs.getContext('2d');
+const bpmCtx   = bpmCvs.getContext('2d');
+const histCtx  = histCvs.getContext('2d');
+
+function resizeCanvases() {
+  for (const c of [specCvs, envCvs, bpmCvs, histCvs]) {
+    c.width  = c.offsetWidth  * window.devicePixelRatio;
+    c.height = c.offsetHeight * window.devicePixelRatio;
+  }
+}
+window.addEventListener('resize', resizeCanvases);
+setTimeout(resizeCanvases, 200);
+
+// ── SPECTROGRAM COLORMAP (inferno) ────────────────────────
+function infernoColor(t) {
+  // Simplified inferno: black → purple → orange → yellow
+  const stops = [
+    [0,   [20,  11,  52]],
+    [0.25,[132, 32,  107]],
+    [0.5, [229, 92,  46]],
+    [0.75,[253, 187, 48]],
+    [1.0, [252, 255, 164]]
+  ];
+  t = Math.max(0, Math.min(1, t));
+  for (let i = 1; i < stops.length; i++) {
+    if (t <= stops[i][0]) {
+      const [t0, c0] = stops[i-1];
+      const [t1, c1] = stops[i];
+      const f = (t - t0) / (t1 - t0);
+      return [
+        Math.round(c0[0] + f*(c1[0]-c0[0])),
+        Math.round(c0[1] + f*(c1[1]-c0[1])),
+        Math.round(c0[2] + f*(c1[2]-c0[2]))
+      ];
+    }
+  }
+  return [252, 255, 164];
+}
+
+// Pre-build colormap LUT
+const CMAP = new Uint8ClampedArray(256*4);
+for (let i = 0; i < 256; i++) {
+  const [r,g,b] = infernoColor(i/255);
+  CMAP[i*4]=r; CMAP[i*4+1]=g; CMAP[i*4+2]=b; CMAP[i*4+3]=255;
+}
+
+function drawSpectrogram(spec_flat, rows, cols) {
+  if (!rows || !cols) return;
+  const W = specCvs.width, H = specCvs.height;
+  // Create offscreen image the size of spec data
+  const imgData = new ImageData(cols, rows);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const idx = r * cols + c;
+      const val = Math.max(0, Math.min(1, spec_flat[idx]));
+      const ci  = Math.round(val * 255);
+      // Flip rows (origin lower)
+      const pr = (rows - 1 - r) * cols + c;
+      imgData.data[pr*4]   = CMAP[ci*4];
+      imgData.data[pr*4+1] = CMAP[ci*4+1];
+      imgData.data[pr*4+2] = CMAP[ci*4+2];
+      imgData.data[pr*4+3] = 255;
+    }
+  }
+  const offscreen = document.createElement('canvas');
+  offscreen.width = cols; offscreen.height = rows;
+  offscreen.getContext('2d').putImageData(imgData, 0, 0);
+  specCtx.fillStyle = '#071220';
+  specCtx.fillRect(0, 0, W, H);
+  specCtx.drawImage(offscreen, 0, 0, W, H);
+
+  // Grid lines
+  specCtx.strokeStyle = 'rgba(26,58,92,0.5)';
+  specCtx.lineWidth = 1;
+  for (let i = 1; i < 5; i++) {
+    const x = (i/5)*W;
+    specCtx.beginPath(); specCtx.moveTo(x, 0); specCtx.lineTo(x, H); specCtx.stroke();
+  }
+  for (let i = 1; i < 4; i++) {
+    const y = (i/4)*H;
+    specCtx.beginPath(); specCtx.moveTo(0, y); specCtx.lineTo(W, y); specCtx.stroke();
+  }
+}
+
+function drawEnvelope(envelope, amp_limit, s1_times, s2_times, block_sec) {
+  const W = envCvs.width, H = envCvs.height;
+  envCtx.fillStyle = '#040b14';
+  envCtx.fillRect(0, 0, W, H);
+
+  // Grid
+  envCtx.strokeStyle = 'rgba(26,58,92,0.4)';
+  envCtx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = (i/4)*H;
+    envCtx.beginPath(); envCtx.moveTo(0, y); envCtx.lineTo(W, y); envCtx.stroke();
+  }
+
+  // Envelope fill
+  if (!envelope || envelope.length < 2) return;
+  const n = envelope.length;
+
+  // Gradient fill
+  const grad = envCtx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, 'rgba(0,212,255,0.15)');
+  grad.addColorStop(1, 'rgba(0,212,255,0.0)');
+
+  envCtx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n-1)) * W;
+    const y = H - (envelope[i] / amp_limit) * H * 0.9 - 2;
+    i === 0 ? envCtx.moveTo(x, y) : envCtx.lineTo(x, y);
+  }
+  envCtx.lineTo(W, H); envCtx.lineTo(0, H); envCtx.closePath();
+  envCtx.fillStyle = grad;
+  envCtx.fill();
+
+  // Line
+  envCtx.beginPath();
+  envCtx.strokeStyle = '#00d4ff';
+  envCtx.lineWidth = 1.5 * window.devicePixelRatio;
+  envCtx.shadowBlur = 6; envCtx.shadowColor = 'rgba(0,212,255,0.4)';
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n-1)) * W;
+    const y = H - (envelope[i] / amp_limit) * H * 0.9 - 2;
+    i === 0 ? envCtx.moveTo(x, y) : envCtx.lineTo(x, y);
+  }
+  envCtx.stroke();
+  envCtx.shadowBlur = 0;
+
+  // S1 markers
+  const dpr = window.devicePixelRatio;
+  if (s1_times && s1_times.length) {
+    envCtx.fillStyle = 'rgba(255,68,68,0.9)';
+    for (const t of s1_times) {
+      const frac = (t + block_sec) / block_sec;
+      const x = frac * W;
+      const idx = Math.round(frac * (n-1));
+      const y = H - (envelope[Math.min(idx,n-1)] / amp_limit) * H * 0.9 - 2;
+      envCtx.beginPath();
+      envCtx.arc(x, y, 4*dpr, 0, Math.PI*2);
+      envCtx.fill();
+    }
+  }
+  // S2 markers
+  if (s2_times && s2_times.length) {
+    envCtx.fillStyle = 'rgba(68,136,255,0.9)';
+    for (const t of s2_times) {
+      const frac = (t + block_sec) / block_sec;
+      const x = frac * W;
+      const idx = Math.round(frac * (n-1));
+      const y = H - (envelope[Math.min(idx,n-1)] / amp_limit) * H * 0.9 - 2;
+      envCtx.beginPath();
+      envCtx.arc(x, y, 4*dpr, 0, Math.PI*2);
+      envCtx.fill();
+    }
+  }
+}
+
+function drawBpmTrend(bpm_hist) {
+  const W = bpmCvs.width, H = bpmCvs.height;
+  bpmCtx.fillStyle = '#071220';
+  bpmCtx.fillRect(0, 0, W, H);
+  if (!bpm_hist || bpm_hist.length < 2) return;
+
+  // Zone shading
+  const toY = v => H - ((v - 50) / 150) * H;
+  bpmCtx.fillStyle = 'rgba(0,255,136,0.04)';
+  bpmCtx.fillRect(0, toY(100), W, toY(60) - toY(100));
+
+  // Grid lines at 60, 100, 150
+  for (const [v, col] of [[60,'rgba(68,136,255,0.3)'],[100,'rgba(0,255,136,0.3)'],[150,'rgba(255,51,102,0.3)']]) {
+    bpmCtx.strokeStyle = col; bpmCtx.lineWidth = 1;
+    bpmCtx.setLineDash([4, 6]);
+    bpmCtx.beginPath(); bpmCtx.moveTo(0, toY(v)); bpmCtx.lineTo(W, toY(v)); bpmCtx.stroke();
+  }
+  bpmCtx.setLineDash([]);
+
+  const n = bpm_hist.length;
+  bpmCtx.beginPath();
+  bpmCtx.strokeStyle = '#ff8c00';
+  bpmCtx.lineWidth = 2 * window.devicePixelRatio;
+  bpmCtx.shadowBlur = 8; bpmCtx.shadowColor = 'rgba(255,140,0,0.4)';
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n-1)) * W;
+    const y = toY(bpm_hist[i]);
+    i === 0 ? bpmCtx.moveTo(x, y) : bpmCtx.lineTo(x, y);
+  }
+  bpmCtx.stroke();
+  bpmCtx.shadowBlur = 0;
+}
+
+function drawBpmHistory(history) {
+  const W = histCvs.width, H = histCvs.height;
+  histCtx.fillStyle = '#071220';
+  histCtx.fillRect(0, 0, W, H);
+  if (!history || history.length < 2) return;
+  const min = Math.min(...history) - 5;
+  const max = Math.max(...history) + 5;
+  const n = history.length;
+  histCtx.beginPath();
+  histCtx.strokeStyle = 'rgba(0,212,255,0.6)';
+  histCtx.lineWidth = 1.5;
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n-1)) * W;
+    const y = H - ((history[i] - min) / (max - min)) * H;
+    i === 0 ? histCtx.moveTo(x, y) : histCtx.lineTo(x, y);
+  }
+  histCtx.stroke();
+}
+
+// ── STATE ─────────────────────────────────────────────────
+let sessionBpmHistory = [];
+let detectionCount    = 0;
+let lastBeat          = false;
+let evtSource         = null;
+let isActive          = false;
+
+// ── SSE STREAM ────────────────────────────────────────────
+function startStream() {
+  if (evtSource) evtSource.close();
+  evtSource = new EventSource('/stream');
+  evtSource.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    if (!data || Object.keys(data).length === 0) return;
+    updateUI(data);
+  };
+}
+
+function updateUI(d) {
+  // Visuals
+  drawSpectrogram(d.spec_flat, d.spec_rows, d.spec_cols);
+  drawEnvelope(d.envelope, d.amp_limit, d.s1_times, d.s2_times, d.block_sec);
+  drawBpmTrend(d.bpm_hist);
+
+  // BPM
+  if (d.bpm) {
+    document.getElementById('bpm-big').textContent = d.bpm.toFixed(0);
+    sessionBpmHistory.push(d.bpm);
+    drawBpmHistory(sessionBpmHistory);
+    updateSessionStats();
+
+    // Zone
+    const zone = document.getElementById('bpm-zone');
+    if      (d.bpm < 60)  { zone.textContent='BRADYCARDIA'; zone.className='bpm-zone zone-low'; }
+    else if (d.bpm <= 100) { zone.textContent='NORMAL RANGE'; zone.className='bpm-zone zone-normal'; }
+    else if (d.bpm <= 149) { zone.textContent='TACHYCARDIA'; zone.className='bpm-zone zone-high'; }
+    else                   { zone.textContent='CRITICAL'; zone.className='bpm-zone zone-danger'; }
+  }
+
+  // Confidence
+  const pct = Math.round(d.confidence * 100);
+  document.getElementById('conf-pct').textContent = pct + '%';
+  document.getElementById('conf-bar').style.width = pct + '%';
+  document.getElementById('mean-conf').textContent = d.mean_conf.toFixed(2);
+
+  // Status badge + heartbeat flash
+  const badge = document.getElementById('status-badge');
+  const flash = document.getElementById('hb-flash');
+  if (d.heartbeat) {
+    badge.textContent = '♥ HEARTBEAT';
+    badge.className   = 'status-beat';
+    if (!lastBeat) {
+      detectionCount++;
+      document.getElementById('diag-count').textContent = detectionCount;
+      flash.classList.remove('animate');
+      void flash.offsetWidth;
+      flash.classList.add('animate');
+    }
+    document.getElementById('diag-status').textContent = 'ACTIVE';
+    document.getElementById('diag-status').className   = 'metric-val ok';
+  } else {
+    badge.textContent = 'NO SIGNAL';
+    badge.className   = 'status-no-beat';
+    document.getElementById('diag-status').textContent = 'LISTENING';
+    document.getElementById('diag-status').className   = 'metric-val warn';
+  }
+  lastBeat = d.heartbeat;
+}
+
+function updateSessionStats() {
+  if (sessionBpmHistory.length === 0) return;
+  const min = Math.min(...sessionBpmHistory);
+  const max = Math.max(...sessionBpmHistory);
+  const avg = sessionBpmHistory.reduce((a,b)=>a+b,0)/sessionBpmHistory.length;
+  document.getElementById('stat-min').textContent = min.toFixed(1);
+  document.getElementById('stat-max').textContent = max.toFixed(1);
+  document.getElementById('stat-avg').textContent = avg.toFixed(1);
+}
+
+// ── CONTROLS ──────────────────────────────────────────────
+document.getElementById('btn-start').addEventListener('click', async () => {
+  const res = await fetch('/start', { method: 'POST' });
+  const data = await res.json();
+  if (data.ok) {
+    isActive = true;
+    startStream();
+    document.getElementById('btn-start').style.display = 'none';
+    document.getElementById('btn-stop').style.display = '';
+    document.getElementById('status-badge').textContent = 'LISTENING';
+    document.getElementById('status-badge').className   = 'status-active';
+    document.getElementById('sb-dot').className = 'sb-dot sb-green';
+    document.getElementById('sb-text').textContent = 'AUDIO STREAM ACTIVE';
+  }
+});
+
+document.getElementById('btn-stop').addEventListener('click', async () => {
+  await fetch('/stop', { method: 'POST' });
+  if (evtSource) evtSource.close();
+  isActive = false;
+  document.getElementById('btn-stop').style.display = 'none';
+  document.getElementById('btn-start').style.display = '';
+  document.getElementById('status-badge').textContent = 'STANDBY';
+  document.getElementById('status-badge').className   = 'status-idle';
+  document.getElementById('sb-dot').className = 'sb-dot sb-gray';
+  document.getElementById('sb-text').textContent = 'SYSTEM READY';
+});
+
+// ── SETTINGS ──────────────────────────────────────────────
+const overlay  = document.getElementById('settings-overlay');
+const slHigh   = document.getElementById('sl-high');
+const slLow    = document.getElementById('sl-low');
+const slAmp    = document.getElementById('sl-amp');
+const lblHigh  = document.getElementById('lbl-high');
+const lblLow   = document.getElementById('lbl-low');
+const lblAmp   = document.getElementById('lbl-amp');
+
+slHigh.addEventListener('input', () => lblHigh.textContent = slHigh.value + ' Hz');
+slLow.addEventListener('input',  () => lblLow.textContent  = slLow.value  + ' Hz');
+slAmp.addEventListener('input',  () => lblAmp.textContent  = parseFloat(slAmp.value).toFixed(1));
+
+document.getElementById('btn-settings').addEventListener('click', () => {
+  overlay.classList.add('open');
+});
+document.getElementById('modal-close').addEventListener('click', () => overlay.classList.remove('open'));
+document.getElementById('btn-cancel').addEventListener('click',  () => overlay.classList.remove('open'));
+
+document.getElementById('btn-apply').addEventListener('click', async () => {
+  const res = await fetch('/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      high:      parseFloat(slHigh.value),
+      low:       parseFloat(slLow.value),
+      amp_limit: parseFloat(slAmp.value),
+    })
+  });
+  const data = await res.json();
+  if (data.ok) {
+    document.getElementById('cfg-high').textContent = data.high  + ' Hz';
+    document.getElementById('cfg-low').textContent  = data.low   + ' Hz';
+    document.getElementById('cfg-amp').textContent  = data.amp_limit;
+    document.getElementById('sb-filter').textContent = data.low + '–' + data.high + ' Hz';
+  }
+  overlay.classList.remove('open');
+});
+
+overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+
+// Load current settings from server on page load
+fetch('/status').then(r=>r.json()).then(d => {
+  const cfg = d.config;
+  slHigh.value = cfg.high; lblHigh.textContent = cfg.high + ' Hz';
+  slLow.value  = cfg.low;  lblLow.textContent  = cfg.low  + ' Hz';
+  slAmp.value  = cfg.amp_limit; lblAmp.textContent = cfg.amp_limit;
+  document.getElementById('cfg-high').textContent = cfg.high  + ' Hz';
+  document.getElementById('cfg-low').textContent  = cfg.low   + ' Hz';
+  document.getElementById('cfg-amp').textContent  = cfg.amp_limit;
+  document.getElementById('sb-filter').textContent = cfg.low + '–' + cfg.high + ' Hz';
+});
+</script>
+</body>
+</html>
