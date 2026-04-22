@@ -15,8 +15,10 @@
   --green:   #00ff88; --green2: #00cc6a;
   --red:     #ff3366; --orange: #ff8c00; --yellow: #ffd700;
   --s1: #ff4444; --s2: #4488ff;
-  --pso: #c084fc;    /* purple for PSO */
+  --sgo: #c084fc;    /* purple for SGO (Social Group Optimisation) */
   --rec: #ff4466;    /* rec red */
+  --stab-env:  #fbbf24;   /* amber  — envelope stability */
+  --stab-spec: #34d399;   /* emerald — spectral stability */
   --text: #c8dff0; --text2: #7aaabf; --text3: #3d6a88;
   --glow: 0 0 20px rgba(0,212,255,0.3);
   --glow2: 0 0 40px rgba(0,212,255,0.15);
@@ -112,8 +114,8 @@ body::before {
 .btn-rec:hover   { background: rgba(255,68,102,0.12); }
 .btn-rec-stop  { border-color: rgba(255,140,0,0.5); color: var(--orange); background: rgba(255,140,0,0.05); }
 .btn-rec-stop:hover { background: rgba(255,140,0,0.12); }
-.btn-pso       { border-color: rgba(192,132,252,0.5); color: var(--pso); background: rgba(192,132,252,0.05); }
-.btn-pso:hover   { background: rgba(192,132,252,0.12); box-shadow: 0 0 14px rgba(192,132,252,0.2); }
+.btn-sgo       { border-color: rgba(192,132,252,0.5); color: var(--sgo); background: rgba(192,132,252,0.05); }
+.btn-sgo:hover   { background: rgba(192,132,252,0.12); box-shadow: 0 0 14px rgba(192,132,252,0.2); }
 .btn-hist      { border-color: var(--border2); color: var(--text2); background: transparent; }
 .btn-hist:hover  { border-color: var(--yellow); color: var(--yellow); }
 .sys-time { font-family: var(--font-mono); font-size: 13px; color: var(--text2); margin-left: auto; }
@@ -152,14 +154,20 @@ body::before {
 .metric-val.warn { color: var(--orange); }
 .metric-val.err  { color: var(--red); }
 
-/* ══ PSO PANEL (inside right panel) ══ */
-.pso-panel { display: flex; flex-direction: column; gap: 6px; }
-.pso-bar-wrap { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
-.pso-bar { height: 100%; border-radius: 2px; background: linear-gradient(90deg, rgba(192,132,252,0.5), var(--pso)); transition: width 0.3s; box-shadow: 0 0 6px rgba(192,132,252,0.3); }
-.pso-row { display: flex; justify-content: space-between; font-size: 11px; }
-.pso-key { color: var(--text3); }
-.pso-val { font-family: var(--font-mono); color: var(--pso); }
-#pso-log { max-height: 72px; overflow-y: auto; font-family: var(--font-mono); font-size: 9px; color: var(--text3); line-height: 1.6; margin-top: 4px; background: var(--bg3); border: 1px solid var(--border); border-radius: 2px; padding: 4px 6px; }
+/* ══ SGO PANEL (Social Group Optimisation) ══ */
+.sgo-panel { display: flex; flex-direction: column; gap: 6px; }
+.sgo-bar-wrap { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+.sgo-bar { height: 100%; border-radius: 2px; background: linear-gradient(90deg, rgba(192,132,252,0.5), var(--sgo)); transition: width 0.3s; box-shadow: 0 0 6px rgba(192,132,252,0.3); }
+.sgo-row { display: flex; justify-content: space-between; font-size: 11px; }
+.sgo-key { color: var(--text3); }
+.sgo-val { font-family: var(--font-mono); color: var(--sgo); }
+#sgo-log { max-height: 72px; overflow-y: auto; font-family: var(--font-mono); font-size: 9px; color: var(--text3); line-height: 1.6; margin-top: 4px; background: var(--bg3); border: 1px solid var(--border); border-radius: 2px; padding: 4px 6px; }
+/* ══ STABILITY BARS ══ */
+.stab-row { display: flex; flex-direction: column; gap: 3px; }
+.stab-label-row { display: flex; justify-content: space-between; font-size: 10px; }
+.stab-bar-track { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+.stab-bar-env  { height: 100%; border-radius: 2px; background: var(--stab-env);  transition: width 0.3s; }
+.stab-bar-spec { height: 100%; border-radius: 2px; background: var(--stab-spec); transition: width 0.3s; }
 
 /* ══ CANVASES ══ */
 #spec-section { grid-column: 2; grid-row: 2; background: var(--bg2); border-bottom: 1px solid var(--border); padding: 8px 14px 6px; position: relative; overflow: hidden; }
@@ -180,8 +188,8 @@ body::before {
 .sb-green { background: var(--green); box-shadow: 0 0 6px var(--green); }
 .sb-red   { background: var(--red);   box-shadow: 0 0 6px var(--red); }
 .sb-gray  { background: var(--text3); }
-.sb-purple { background: var(--pso); box-shadow: 0 0 6px var(--pso); animation: pso-pulse 1s ease-in-out infinite; }
-@keyframes pso-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.sb-purple { background: var(--sgo); box-shadow: 0 0 6px var(--sgo); animation: sgo-pulse 1s ease-in-out infinite; }
+@keyframes sgo-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 .sb-val { color: var(--text2); }
 
 /* ══ MODALS (shared base) ══ */
@@ -289,7 +297,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14p
 <div id="install-screen">
   <div class="install-logo">Cardio Diagnostics Systems</div>
   <div class="install-title">CardioScope</div>
-  <div class="install-sub">DIGITAL AUSCULTATION PLATFORM · v3.0</div>
+  <div class="install-sub">DIGITAL AUSCULTATION PLATFORM · v4.0</div>
   <div class="install-card">
     <div class="install-card-title">System Check</div>
     <div id="dep-list"></div>
@@ -319,7 +327,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14p
     <button class="top-btn btn-rec-stop" id="btn-rec-stop" style="display:none">⏹ STOP REC</button>
     <button class="top-btn btn-danger"   id="btn-rec-cancel" style="display:none;font-size:11px;letter-spacing:1px">✕ CANCEL</button>
     <div class="vsep"></div>
-    <button class="top-btn btn-pso"      id="btn-pso">⚛ AUTO-TUNE</button>
+    <button class="top-btn btn-sgo"      id="btn-sgo">⚛ AUTO-TUNE (SGO)</button>
     <button class="top-btn btn-settings" id="btn-settings">⚙ SETTINGS</button>
     <button class="top-btn btn-hist"     id="btn-hist">📋 HISTORY</button>
     <div class="sys-time" id="sys-time">--:--:--</div>
@@ -405,35 +413,63 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14p
   <!-- RIGHT PANEL -->
   <div id="right-panel">
     <div>
-      <div class="panel-label">Auto-Tune (PSO)</div>
-      <div class="pso-panel">
-        <div class="pso-row">
-          <span class="pso-key">STATUS</span>
-          <span class="pso-val" id="pso-status-txt">IDLE</span>
+      <div class="panel-label">Auto-Tune — SGO
+        <span style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-left:4px">Satapathy &amp; Naik, 2016</span>
+      </div>
+      <div class="sgo-panel">
+        <div class="sgo-row">
+          <span class="sgo-key">STATUS</span>
+          <span class="sgo-val" id="sgo-status-txt">IDLE</span>
         </div>
-        <div class="pso-row">
-          <span class="pso-key">ITERATION</span>
-          <span class="pso-val" id="pso-iter">0 / 40</span>
+        <div class="sgo-row">
+          <span class="sgo-key">PHASE</span>
+          <span class="sgo-val" id="sgo-phase" style="font-size:10px">—</span>
         </div>
-        <div class="pso-bar-wrap"><div class="pso-bar" id="pso-bar" style="width:0%"></div></div>
-        <div class="pso-row">
-          <span class="pso-key">FITNESS</span>
-          <span class="pso-val" id="pso-fitness">0.000</span>
+        <div class="sgo-row">
+          <span class="sgo-key">ITERATION</span>
+          <span class="sgo-val" id="sgo-iter">0 / 40</span>
         </div>
-        <div class="pso-row">
-          <span class="pso-key">BEST LOW</span>
-          <span class="pso-val" id="pso-low">---</span>
+        <div class="sgo-bar-wrap"><div class="sgo-bar" id="sgo-bar" style="width:0%"></div></div>
+        <div class="sgo-row">
+          <span class="sgo-key">FITNESS</span>
+          <span class="sgo-val" id="sgo-fitness">0.000</span>
         </div>
-        <div class="pso-row">
-          <span class="pso-key">BEST HIGH</span>
-          <span class="pso-val" id="pso-high">---</span>
+        <div class="sgo-row">
+          <span class="sgo-key">BEST LOW</span>
+          <span class="sgo-val" id="sgo-low">---</span>
         </div>
-        <div class="pso-row">
-          <span class="pso-key">BEST AMP</span>
-          <span class="pso-val" id="pso-amp">---</span>
+        <div class="sgo-row">
+          <span class="sgo-key">BEST HIGH</span>
+          <span class="sgo-val" id="sgo-high">---</span>
         </div>
-        <div id="pso-log"></div>
-        <button class="top-btn btn-pso" id="btn-pso-stop" style="display:none;width:100%;margin-top:4px;text-align:center">⏹ STOP PSO</button>
+        <div class="sgo-row">
+          <span class="sgo-key">BEST AMP</span>
+          <span class="sgo-val" id="sgo-amp">---</span>
+        </div>
+        <div id="sgo-log"></div>
+        <button class="top-btn btn-sgo" id="btn-sgo-stop" style="display:none;width:100%;margin-top:4px;text-align:center">⏹ STOP SGO</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-label">Peak Stability</div>
+      <div class="stab-row" style="margin-bottom:8px">
+        <div class="stab-label-row">
+          <span style="color:var(--stab-env);font-size:10px">ENV CHANNEL</span>
+          <span id="stab-env-pct" style="font-family:var(--font-mono);font-size:10px;color:var(--stab-env)">0%</span>
+        </div>
+        <div class="stab-bar-track"><div class="stab-bar-env" id="stab-env-bar" style="width:0%"></div></div>
+      </div>
+      <div class="stab-row">
+        <div class="stab-label-row">
+          <span style="color:var(--stab-spec);font-size:10px">SPEC 30–100 Hz</span>
+          <span id="stab-spec-pct" style="font-family:var(--font-mono);font-size:10px;color:var(--stab-spec)">0%</span>
+        </div>
+        <div class="stab-bar-track"><div class="stab-bar-spec" id="stab-spec-bar" style="width:0%"></div></div>
+      </div>
+      <div style="margin-top:8px;font-size:10px;color:var(--text3);line-height:1.5">
+        1 − CV of inter-beat intervals.<br>
+        100% = perfectly regular rhythm.
       </div>
     </div>
 
@@ -468,15 +504,15 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14p
     </div>
     <div style="display:flex;gap:4px"><span style="color:var(--text3)">FILTER:</span><span class="sb-val" id="sb-filter">30–500 Hz</span></div>
     <div style="display:flex;gap:4px"><span style="color:var(--text3)">AMP:</span><span class="sb-val" id="sb-amp">1.5</span></div>
-    <div id="sb-pso" style="display:none;align-items:center;gap:6px">
+    <div id="sb-sgo" style="display:none;align-items:center;gap:6px">
       <div class="sb-dot sb-purple"></div>
-      <span class="sb-val">PSO RUNNING</span>
+      <span class="sb-val">SGO RUNNING</span>
     </div>
     <div id="sb-rec" style="display:none;align-items:center;gap:6px">
       <div class="sb-dot sb-red" style="animation:rec-blink 1.2s step-start infinite"></div>
       <span class="sb-val" style="color:var(--rec)">RECORDING</span>
     </div>
-    <div style="margin-left:auto;display:flex;gap:4px"><span style="color:var(--text3)">CardioScope</span><span class="sb-val">v3.0</span></div>
+    <div style="margin-left:auto;display:flex;gap:4px"><span style="color:var(--text3)">CardioScope</span><span class="sb-val">v4.0</span></div>
   </div>
 </div>
 
@@ -595,7 +631,7 @@ const MODEL_LOADED = {{ 'true' if model_loaded else 'false' }};
 (function() {
   const screen = document.getElementById('install-screen');
   const mainEl = document.getElementById('main');
-  if (localStorage.getItem('cardio_v3')) {
+  if (localStorage.getItem('cardio_v4')) {
     screen.style.display = 'none'; mainEl.classList.add('visible'); return;
   }
   const depInfo = {
@@ -634,7 +670,7 @@ const MODEL_LOADED = {{ 'true' if model_loaded else 'false' }};
     }
   }, 25);
   document.getElementById('launch-btn').addEventListener('click', () => {
-    localStorage.setItem('cardio_v3','1');
+    localStorage.setItem('cardio_v4','1');
     screen.classList.add('hidden');
     setTimeout(()=>{ screen.style.display='none'; mainEl.classList.add('visible'); },800);
   });
@@ -690,31 +726,111 @@ function drawSpec(flat, rows, cols) {
   for(let i=1;i<5;i++){const x=i/5*W;specCtx.beginPath();specCtx.moveTo(x,0);specCtx.lineTo(x,H);specCtx.stroke();}
 }
 
-function drawEnv(env, amp, s1t, s2t, bsec) {
+function smooth(arr, k=3) {
+  const out = [];
+  for (let i = 0; i < arr.length; i++) {
+    let sum = 0, count = 0;
+    for (let j = -k; j <= k; j++) {
+      const idx = i + j;
+      if (idx >= 0 && idx < arr.length) {
+        sum += arr[idx];
+        count++;
+      }
+    }
+    out.push(sum / count);
+  }
+  return out;
+}
+
+function drawEnv(env, specSig, amp, s1t, s2t, bsec, envStab, specStab) {
   const W=envCvs.width, H=envCvs.height;
   envCtx.fillStyle='#040b14'; envCtx.fillRect(0,0,W,H);
+  // Grid
   envCtx.strokeStyle='rgba(26,58,92,0.35)'; envCtx.lineWidth=1;
   for(let i=1;i<=4;i++){envCtx.beginPath();envCtx.moveTo(0,i/4*H);envCtx.lineTo(W,i/4*H);envCtx.stroke();}
-  if(!env||env.length<2) return;
-  const n=env.length;
+  const n=env?env.length:0;
+  for (let i = 0; i < n; i++) {
+    const x = i/(n-1)*W;
+
+    const specIdx = Math.floor(i * (specSig.length-1) / (n-1));
+    const y = H - (specSig[specIdx]) * H * 0.85 - 2;
+
+    if (i) envCtx.lineTo(x, y);
+    else   envCtx.moveTo(x, y);
+  }
+  if(n<2) return;
+
+  specSig = smooth(specSig || [], 5);
+
+  // ── Spectral channel overlay (30–100 Hz) ─────────────────────────────
+  if(specSig && specSig.length>=2){
+    const ns=specSig.length;
+    envCtx.beginPath();
+    for(let i=0;i<n;i++){
+      const specIdx = Math.floor(i * (specSig.length-1) / (n-1));
+      const val = specSig[specIdx];
+      const x=i/(n-1)*W, y=H-(val)*H*0.85-2;
+      i?envCtx.lineTo(x,y):envCtx.moveTo(x,y);
+    }
+    envCtx.lineTo(W,H); envCtx.lineTo(0,H); envCtx.closePath();
+    envCtx.fillStyle='rgba(52,211,153,0.08)'; envCtx.fill();
+    envCtx.beginPath();
+    for(let i=0;i<n;i++){
+      const specIdx = Math.floor(i * (specSig.length-1) / (n-1));
+      const val = specSig[specIdx];
+      const x=i/(n-1)*W, y=H-(val)*H*0.85-2;
+      i?envCtx.lineTo(x,y):envCtx.moveTo(x,y);
+    }
+    envCtx.strokeStyle='rgba(52,211,153,0.55)';
+    envCtx.lineWidth=1*(window.devicePixelRatio||1);
+    envCtx.stroke();
+  }
+
+  // ── Broadband envelope (fill + line) ─────────────────────────────────
   const g=envCtx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,'rgba(0,212,255,0.15)'); g.addColorStop(1,'rgba(0,212,255,0)');
+  g.addColorStop(0,'rgba(0,212,255,0.13)'); g.addColorStop(1,'rgba(0,212,255,0)');
   envCtx.beginPath();
-  for(let i=0;i<n;i++){const x=i/(n-1)*W, y=H-(env[i]/amp)*H*0.9-2; i?envCtx.lineTo(x,y):envCtx.moveTo(x,y);}
-  envCtx.lineTo(W,H); envCtx.lineTo(0,H); envCtx.closePath(); envCtx.fillStyle=g; envCtx.fill();
-  envCtx.beginPath(); envCtx.strokeStyle='#00d4ff'; envCtx.lineWidth=1.5*(window.devicePixelRatio||1);
-  envCtx.shadowBlur=6; envCtx.shadowColor='rgba(0,212,255,0.4)';
-  for(let i=0;i<n;i++){const x=i/(n-1)*W, y=H-(env[i]/amp)*H*0.9-2; i?envCtx.lineTo(x,y):envCtx.moveTo(x,y);}
+  for(let i=0;i<n;i++){const x=i/(n-1)*W, y=H-(env[i]/amp)*H*0.88-2; i?envCtx.lineTo(x,y):envCtx.moveTo(x,y);}
+  envCtx.lineTo(W,H); envCtx.lineTo(0,H); envCtx.closePath();
+  envCtx.fillStyle=g; envCtx.fill();
+
+  envCtx.beginPath(); envCtx.strokeStyle='#00d4ff';
+  envCtx.lineWidth=1.5*(window.devicePixelRatio||1);
+  envCtx.shadowBlur=5; envCtx.shadowColor='rgba(0,212,255,0.4)';
+  for(let i=0;i<n;i++){const x=i/(n-1)*W, y=H-(env[i]/amp)*H*0.88-2; i?envCtx.lineTo(x,y):envCtx.moveTo(x,y);}
   envCtx.stroke(); envCtx.shadowBlur=0;
+
+  // ── S1 / S2 ensemble markers ──────────────────────────────────────────
   const dpr=window.devicePixelRatio||1;
-  [[s1t,'rgba(255,68,68,0.9)'],[s2t,'rgba(68,136,255,0.9)']].forEach(([times,col])=>{
-    if(!times) return; envCtx.fillStyle=col;
+  [[s1t,'#ff4444',6],[s2t,'#4488ff',5]].forEach(([times,col,r])=>{
+    if(!times||!times.length) return;
+    envCtx.shadowBlur=8; envCtx.shadowColor=col;
     times.forEach(t=>{
-      const frac=(t+bsec)/bsec, x=frac*W, idx=Math.round(frac*(n-1));
-      const y=H-(env[Math.min(idx,n-1)]/amp)*H*0.9-2;
-      envCtx.beginPath(); envCtx.arc(x,y,4*dpr,0,Math.PI*2); envCtx.fill();
+      const frac=(t+bsec)/bsec, x=frac*W;
+      const idx=Math.round(frac*(n-1));
+      const y=H-(env[Math.min(idx,n-1)]/amp)*H*0.88-2;
+      // Outer ring
+      envCtx.beginPath(); envCtx.arc(x,y,r*dpr,0,Math.PI*2);
+      envCtx.strokeStyle=col; envCtx.lineWidth=2; envCtx.stroke();
+      // Inner dot
+      envCtx.beginPath(); envCtx.arc(x,y,2.5*dpr,0,Math.PI*2);
+      envCtx.fillStyle=col; envCtx.fill();
+      // Vertical drop line
+      envCtx.beginPath(); envCtx.strokeStyle=col+'66';
+      envCtx.lineWidth=1; envCtx.setLineDash([3,4]);
+      envCtx.moveTo(x,y+r*dpr); envCtx.lineTo(x,H);
+      envCtx.stroke(); envCtx.setLineDash([]);
     });
+    envCtx.shadowBlur=0;
   });
+
+  // ── Legend (bottom-left) ─────────────────────────────────────────────
+  const legendY = H - 10;
+  envCtx.font = `${10*(dpr)}px 'Share Tech Mono'`;
+  envCtx.fillStyle='rgba(0,212,255,0.7)';   envCtx.fillText('─ ENV',   8*dpr, legendY);
+  envCtx.fillStyle='rgba(52,211,153,0.7)';  envCtx.fillText('─ SPEC 30–100Hz', 58*dpr, legendY);
+  envCtx.fillStyle='#ff4444';               envCtx.fillText('● S1', 195*dpr, legendY);
+  envCtx.fillStyle='#4488ff';               envCtx.fillText('● S2', 225*dpr, legendY);
 }
 
 function drawBpm(hist) {
@@ -747,7 +863,7 @@ function drawHist(h) {
 // ── STATE ──────────────────────────────────────────────────────────────
 let sessionBpm=[], detCount=0, lastBeat=false, evtSrc=null;
 let isRecording=false, recTimerInterval=null, recStartTime=null;
-let psoRunning=false;
+let sgoRunning=false;
 
 // ── SSE ────────────────────────────────────────────────────────────────
 function startStream() {
@@ -762,7 +878,9 @@ function startStream() {
 
 function updateUI(d) {
   drawSpec(d.spec_flat, d.spec_rows, d.spec_cols);
-  drawEnv(d.envelope, d.amp_limit, d.s1_times, d.s2_times, d.block_sec);
+  drawEnv(d.envelope, d.spec_signal, d.amp_limit,
+          d.s1_times, d.s2_times, d.block_sec,
+          d.env_stability, d.spec_stability);
   drawBpm(d.bpm_hist);
 
   if (d.bpm) {
@@ -779,6 +897,16 @@ function updateUI(d) {
   document.getElementById('conf-pct').textContent = pct+'%';
   document.getElementById('conf-bar').style.width = pct+'%';
   document.getElementById('mean-conf').textContent = d.mean_conf.toFixed(2);
+
+  // Stability bars
+  if (d.env_stability !== undefined) {
+    const ep = Math.round(d.env_stability*100);
+    const sp = Math.round(d.spec_stability*100);
+    document.getElementById('stab-env-pct').textContent  = ep+'%';
+    document.getElementById('stab-spec-pct').textContent = sp+'%';
+    document.getElementById('stab-env-bar').style.width  = ep+'%';
+    document.getElementById('stab-spec-bar').style.width = sp+'%';
+  }
 
   const badge = document.getElementById('status-badge');
   if (d.heartbeat) {
@@ -797,30 +925,50 @@ function updateUI(d) {
   }
   lastBeat = d.heartbeat;
 
-  // PSO updates from stream
-  if (d.pso) {
-    const p = d.pso;
-    if (p.running !== psoRunning) {
-      psoRunning = p.running;
-      document.getElementById('btn-pso').style.display      = psoRunning ? 'none' : '';
-      document.getElementById('btn-pso-stop').style.display = psoRunning ? '' : 'none';
-      document.getElementById('sb-pso').style.display       = psoRunning ? 'flex' : 'none';
-      document.getElementById('pso-status-txt').textContent = psoRunning ? 'RUNNING' : 'COMPLETE';
-      document.getElementById('pso-status-txt').style.color = psoRunning ? 'var(--pso)' : 'var(--green)';
+  // SGO updates from stream
+  if (d.sgo) {
+    const p = d.sgo;
+    if (p.running !== sgoRunning) {
+      sgoRunning = p.running;
+      document.getElementById('btn-sgo').style.display      = sgoRunning ? 'none' : '';
+      document.getElementById('btn-sgo-stop').style.display = sgoRunning ? '' : 'none';
+      document.getElementById('sb-sgo').style.display       = sgoRunning ? 'flex' : 'none';
+      document.getElementById('sgo-status-txt').textContent = sgoRunning ? 'RUNNING' : 'COMPLETE';
+      document.getElementById('sgo-status-txt').style.color = sgoRunning ? 'var(--sgo)' : 'var(--green)';
     }
-    document.getElementById('pso-iter').textContent    = `${p.iteration} / 40`;
-    document.getElementById('pso-bar').style.width     = (p.iteration/40*100)+'%';
-    document.getElementById('pso-fitness').textContent = p.best_fitness.toFixed(4);
-    if (p.best_low)  document.getElementById('pso-low').textContent  = p.best_low+' Hz';
-    if (p.best_high) document.getElementById('pso-high').textContent = p.best_high+' Hz';
-    if (p.best_amp)  document.getElementById('pso-amp').textContent  = p.best_amp;
+    document.getElementById('sgo-iter').textContent    = `${p.iteration} / 40`;
+    document.getElementById('sgo-bar').style.width     = (p.iteration/40*100)+'%';
+    document.getElementById('sgo-fitness').textContent = p.best_fitness.toFixed(4);
+    document.getElementById('sgo-phase').textContent   = p.phase || '—';
+    if (p.best_low)  document.getElementById('sgo-low').textContent  = p.best_low+' Hz';
+    if (p.best_high) document.getElementById('sgo-high').textContent = p.best_high+' Hz';
+    if (p.best_amp)  document.getElementById('sgo-amp').textContent  = p.best_amp;
+
+    // Live-update settings sliders so the user can see SGO tuning in real time
+    if (p.running && p.best_low && p.best_high && p.best_amp) {
+      document.getElementById('sl-low').value  = p.best_low;
+      document.getElementById('sl-high').value = p.best_high;
+      document.getElementById('sl-amp').value  = p.best_amp;
+      document.getElementById('lbl-low').textContent  = p.best_low+' Hz';
+      document.getElementById('lbl-high').textContent = p.best_high+' Hz';
+      document.getElementById('lbl-amp').textContent  = parseFloat(p.best_amp).toFixed(1);
+    }
+    // Append new log lines
+    if (p.log && p.log.length) {
+      const logEl = document.getElementById('sgo-log');
+      const last  = p.log.slice(-5);
+      logEl.textContent = last.map(l=>
+        `[${String(l.iter).padStart(2,'0')}] fit=${l.fitness.toFixed(3)} L=${l.low} H=${l.high} A=${l.amp}`
+      ).join('\n');
+      logEl.scrollTop = logEl.scrollHeight;
+    }
   }
 
   // Sync live cfg display
   if (d.cfg) {
-    document.getElementById('cfg-low').textContent  = d.cfg.low+' Hz';
-    document.getElementById('cfg-high').textContent = d.cfg.high+' Hz';
-    document.getElementById('cfg-amp').textContent  = d.cfg.amp_limit;
+    document.getElementById('cfg-low').textContent   = d.cfg.low+' Hz';
+    document.getElementById('cfg-high').textContent  = d.cfg.high+' Hz';
+    document.getElementById('cfg-amp').textContent   = d.cfg.amp_limit;
     document.getElementById('sb-filter').textContent = d.cfg.low+'–'+d.cfg.high+' Hz';
     document.getElementById('sb-amp').textContent    = d.cfg.amp_limit;
   }
@@ -937,37 +1085,17 @@ function clearPatientForm() {
   document.getElementById('pat-sex').value='';
 }
 
-// ── PSO ────────────────────────────────────────────────────────────────
-document.getElementById('btn-pso').addEventListener('click', async () => {
-  const r = await (await fetch('/pso/start',{method:'POST'})).json();
+// ── SGO ────────────────────────────────────────────────────────────────
+document.getElementById('btn-sgo').addEventListener('click', async () => {
+  const r = await (await fetch('/sgo/start',{method:'POST'})).json();
   if (!r.ok) showToast('⚠ '+r.error, true);
-  else document.getElementById('pso-log').textContent = '';
+  else document.getElementById('sgo-log').textContent = '';
 });
-document.getElementById('btn-pso-stop').addEventListener('click', async () => {
-  await fetch('/pso/stop',{method:'POST'});
+document.getElementById('btn-sgo-stop').addEventListener('click', async () => {
+  await fetch('/sgo/stop',{method:'POST'});
 });
 
-// Poll PSO log separately
-setInterval(async () => {
-  if (!psoRunning) return;
-  const r = await (await fetch('/pso/status')).json();
-  const log = r.log || [];
-  const logEl = document.getElementById('pso-log');
-  if (log.length) {
-    const last = log.slice(-5);
-    logEl.textContent = last.map(l=>
-      `[${String(l.iter).padStart(2,'0')}] fit=${l.fitness.toFixed(3)} L=${l.low} H=${l.high} A=${l.amp}`
-    ).join('\n');
-    logEl.scrollTop = logEl.scrollHeight;
-    // Live-update settings sliders
-    document.getElementById('sl-low').value  = r.best_low;
-    document.getElementById('sl-high').value = r.best_high;
-    document.getElementById('sl-amp').value  = r.best_amp;
-    document.getElementById('lbl-low').textContent  = r.best_low+' Hz';
-    document.getElementById('lbl-high').textContent = r.best_high+' Hz';
-    document.getElementById('lbl-amp').textContent  = r.best_amp;
-  }
-}, 500);
+// SGO log is updated via the SSE stream (d.sgo) — no separate polling needed.
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 const sliders = [

@@ -40,7 +40,7 @@ python -m pip install --upgrade pip --quiet
 # ── 4. Install dependencies ───────────────────────────────
 Write-Host "→  Installing dependencies..."
 Write-Host "   • numpy scipy flask sounddevice"
-pip install numpy scipy flask sounddevice --quiet
+pip install numpy scipy flask sounddevice matplotlib soundfile --quiet
 
 Write-Host "   • PyTorch (CPU only)"
 pip install torch --index-url https://download.pytorch.org/whl/cpu --quiet

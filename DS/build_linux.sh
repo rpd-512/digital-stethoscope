@@ -40,7 +40,7 @@ pip install --upgrade pip --quiet
 # ── 4. Install dependencies ───────────────────────────────
 echo "→  Installing dependencies (this may take a few minutes)..."
 echo "   • numpy scipy flask sounddevice"
-pip install numpy scipy flask sounddevice --quiet
+pip install numpy scipy flask sounddevice matplotlib soundfile --quiet
 
 echo "   • PyTorch (CPU only — smaller build)"
 # CPU-only torch is ~700 MB smaller than GPU version
